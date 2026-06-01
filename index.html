@@ -247,7 +247,7 @@
 
     .segmented {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 6px;
       padding: 6px;
       border-radius: 8px;
@@ -471,6 +471,7 @@
             <div class="segmented" role="tablist" aria-label="换算方向">
               <button type="button" data-mode="before-to-after">优惠前 → 实付</button>
               <button type="button" class="active" data-mode="after-to-before">实付 → 优惠前</button>
+              <button type="button" data-mode="liters-to-cost">加油量 → 油费</button>
             </div>
           </div>
 
@@ -478,7 +479,7 @@
             <label for="amount" id="amountLabel">实付油费</label>
             <div class="input-wrap">
               <input id="amount" type="number" min="0" step="0.01" inputmode="decimal" value="300">
-              <span class="unit">元</span>
+              <span class="unit" id="amountUnit">元</span>
             </div>
           </div>
 
@@ -525,9 +526,9 @@
             <small>同一升数下的价差</small>
           </div>
           <div class="metric">
-            <span>约加油量</span>
-            <strong id="litersResult">--</strong>
-            <small>由输入金额反推</small>
+            <span id="tertiaryLabel">约加油量</span>
+            <strong id="tertiaryResult">--</strong>
+            <small id="tertiaryHint">由输入金额反推</small>
           </div>
         </div>
       </section>
@@ -541,7 +542,14 @@
   <script>
     const state = {
       mode: localStorage.getItem("fuel-mode") || "after-to-before",
-      defaultDiscount: 0.4
+      activeMode: null,
+      defaultDiscount: 0.4,
+      defaultInputs: {
+        "before-to-after": "300",
+        "after-to-before": "300",
+        "liters-to-cost": "30"
+      },
+      modeOrder: ["before-to-after", "after-to-before", "liters-to-cost"]
     };
 
     const els = {
@@ -551,13 +559,16 @@
       basePrice: document.querySelector("#basePrice"),
       discount: document.querySelector("#discount"),
       amount: document.querySelector("#amount"),
+      amountUnit: document.querySelector("#amountUnit"),
       amountLabel: document.querySelector("#amountLabel"),
       discountedPrice: document.querySelector("#discountedPrice"),
       primaryLabel: document.querySelector("#primaryLabel"),
       primaryResult: document.querySelector("#primaryResult"),
       primaryHint: document.querySelector("#primaryHint"),
       savingResult: document.querySelector("#savingResult"),
-      litersResult: document.querySelector("#litersResult"),
+      tertiaryLabel: document.querySelector("#tertiaryLabel"),
+      tertiaryResult: document.querySelector("#tertiaryResult"),
+      tertiaryHint: document.querySelector("#tertiaryHint"),
       notice: document.querySelector("#notice"),
       statusPill: document.querySelector("#statusPill"),
       swapMode: document.querySelector("#swapMode"),
@@ -588,12 +599,29 @@
     }
 
     function setMode(mode) {
+      if (!state.modeOrder.includes(mode)) return;
+      if (state.activeMode && state.activeMode !== mode) {
+        localStorage.setItem(`fuel-input-${state.activeMode}`, els.amount.value);
+      }
+
       state.mode = mode;
       localStorage.setItem("fuel-mode", mode);
       els.modeButtons.forEach((button) => {
         button.classList.toggle("active", button.dataset.mode === mode);
       });
-      els.amountLabel.textContent = mode === "before-to-after" ? "优惠前油费" : "实付油费";
+
+      if (state.activeMode !== mode) {
+        els.amount.value = localStorage.getItem(`fuel-input-${mode}`) || state.defaultInputs[mode];
+      }
+      state.activeMode = mode;
+
+      const labelMap = {
+        "before-to-after": "优惠前油费",
+        "after-to-before": "实付油费",
+        "liters-to-cost": "加油量"
+      };
+      els.amountLabel.textContent = labelMap[mode];
+      els.amountUnit.textContent = mode === "liters-to-cost" ? "L" : "元";
       calculate();
     }
 
@@ -626,12 +654,13 @@
       els.discountedPrice.value = discounted > 0 ? price(discounted) : "--";
       localStorage.setItem("fuel-discount", String(discount));
       localStorage.setItem("fuel-base-price", String(basePrice));
+      localStorage.setItem(`fuel-input-${state.mode}`, els.amount.value);
 
       if (basePrice <= 0 || discounted <= 0) {
         setStatus(false, "请检查单价");
         els.primaryResult.textContent = "--";
         els.savingResult.textContent = "--";
-        els.litersResult.textContent = "--";
+        els.tertiaryResult.textContent = "--";
         els.notice.textContent = "挂牌价必须大于 0，且每升优惠不能大于或等于挂牌价。";
         return;
       }
@@ -646,6 +675,7 @@
       let resultAmount;
       let fuelLiters;
       let saving;
+      let beforeAmount;
 
       if (state.mode === "before-to-after") {
         fuelLiters = inputAmount / basePrice;
@@ -653,17 +683,32 @@
         saving = inputAmount - resultAmount;
         els.primaryLabel.textContent = "实付油费";
         els.primaryHint.textContent = `优惠前 ${money(inputAmount)} 可加约 ${liters(fuelLiters)}`;
-      } else {
+        els.tertiaryLabel.textContent = "约加油量";
+        els.tertiaryHint.textContent = "由输入金额反推";
+        els.tertiaryResult.textContent = liters(fuelLiters);
+      } else if (state.mode === "after-to-before") {
         fuelLiters = inputAmount / discounted;
         resultAmount = fuelLiters * basePrice;
         saving = resultAmount - inputAmount;
         els.primaryLabel.textContent = "优惠前油费";
         els.primaryHint.textContent = `实付 ${money(inputAmount)} 可加约 ${liters(fuelLiters)}`;
+        els.tertiaryLabel.textContent = "约加油量";
+        els.tertiaryHint.textContent = "由输入金额反推";
+        els.tertiaryResult.textContent = liters(fuelLiters);
+      } else {
+        fuelLiters = inputAmount;
+        beforeAmount = fuelLiters * basePrice;
+        resultAmount = fuelLiters * discounted;
+        saving = beforeAmount - resultAmount;
+        els.primaryLabel.textContent = "实付油费";
+        els.primaryHint.textContent = `加油 ${liters(fuelLiters)} 的优惠后金额`;
+        els.tertiaryLabel.textContent = "优惠前油费";
+        els.tertiaryHint.textContent = "按挂牌价计算";
+        els.tertiaryResult.textContent = money(beforeAmount);
       }
 
       els.primaryResult.textContent = money(resultAmount);
       els.savingResult.textContent = money(Math.max(0, saving));
-      els.litersResult.textContent = liters(fuelLiters);
       els.notice.textContent = `当前按 ${price(basePrice)} 元/升挂牌价、每升优惠 ${price(discount)} 元计算。`;
     }
 
@@ -740,7 +785,9 @@
       button.addEventListener("click", () => setMode(button.dataset.mode));
     });
     els.swapMode.addEventListener("click", () => {
-      setMode(state.mode === "before-to-after" ? "after-to-before" : "before-to-after");
+      const currentIndex = state.modeOrder.indexOf(state.mode);
+      const nextMode = state.modeOrder[(currentIndex + 1) % state.modeOrder.length];
+      setMode(nextMode);
     });
     els.resetDefaults.addEventListener("click", () => {
       els.discount.value = state.defaultDiscount.toFixed(2);
