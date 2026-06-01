@@ -6,6 +6,7 @@
 
 - 显示深圳 95 号汽油今日挂牌价
 - 设置每升优惠金额，例如 `0.40` 元/升
+- 通过 `config.json` 配置默认每升优惠金额
 - 从优惠前油费推算实际支付金额
 - 从实际支付金额反推优惠前油费
 - 显示约加油量和节省金额
@@ -31,6 +32,26 @@ python -m http.server 8000
 3. `Build and deployment` 选择 `Deploy from a branch`。
 4. 分支选择 `main`，目录选择 `/root`。
 5. 保存后等待 Pages 发布。
+
+## 默认优惠配置
+
+默认每升优惠金额写在 `config.json`：
+
+```json
+{
+  "defaultDiscountPerLiter": 0.4
+}
+```
+
+例如想把默认优惠改成每升 `0.7` 元，只需要改成：
+
+```json
+{
+  "defaultDiscountPerLiter": 0.7
+}
+```
+
+用户在网页中手动输入过优惠金额后，浏览器会优先使用用户自己的本地设置；点击“恢复默认优惠”会恢复到 `config.json` 中的默认值。
 
 ## 自动更新油价
 

@@ -597,6 +597,26 @@
       calculate();
     }
 
+    async function loadConfig() {
+      try {
+        const response = await fetch("config.json", { cache: "no-store" });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const config = await response.json();
+        const defaultDiscount = Number(config.defaultDiscountPerLiter);
+
+        if (Number.isFinite(defaultDiscount) && defaultDiscount >= 0) {
+          state.defaultDiscount = defaultDiscount;
+          if (!localStorage.getItem("fuel-discount")) {
+            els.discount.value = defaultDiscount.toFixed(2);
+          }
+        }
+      } catch {
+        if (!localStorage.getItem("fuel-discount")) {
+          els.discount.value = state.defaultDiscount.toFixed(2);
+        }
+      }
+    }
+
     function calculate() {
       const basePrice = numberValue(els.basePrice);
       const discount = numberValue(els.discount);
@@ -730,7 +750,12 @@
       input.addEventListener("input", calculate);
     });
 
-    loadFuelPrice();
+    async function init() {
+      await loadConfig();
+      await loadFuelPrice();
+    }
+
+    init();
   </script>
 </body>
 </html>
