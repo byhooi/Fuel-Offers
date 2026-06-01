@@ -469,13 +469,13 @@
           <div class="field">
             <label>换算方向</label>
             <div class="segmented" role="tablist" aria-label="换算方向">
-              <button type="button" class="active" data-mode="before-to-after">优惠前 → 实付</button>
-              <button type="button" data-mode="after-to-before">实付 → 优惠前</button>
+              <button type="button" data-mode="before-to-after">优惠前 → 实付</button>
+              <button type="button" class="active" data-mode="after-to-before">实付 → 优惠前</button>
             </div>
           </div>
 
           <div class="field">
-            <label for="amount" id="amountLabel">优惠前油费</label>
+            <label for="amount" id="amountLabel">实付油费</label>
             <div class="input-wrap">
               <input id="amount" type="number" min="0" step="0.01" inputmode="decimal" value="300">
               <span class="unit">元</span>
@@ -540,7 +540,7 @@
 
   <script>
     const state = {
-      mode: localStorage.getItem("fuel-mode") || "before-to-after",
+      mode: localStorage.getItem("fuel-mode") || "after-to-before",
       defaultDiscount: 0.4
     };
 
