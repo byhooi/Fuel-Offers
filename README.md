@@ -10,6 +10,7 @@
 - 从实际支付金额反推优惠前油费
 - 显示约加油量和节省金额
 - 使用 GitHub Actions 定时更新 `fuel-price.json`
+- 默认从小熊油耗深圳市油价页抓取 `95#` 的最高价和车友实测优惠价
 
 ## 本地预览
 
@@ -35,9 +36,17 @@ python -m http.server 8000
 
 `.github/workflows/update-fuel-price.yml` 会每天运行一次 `scripts/update-fuel-price.mjs`，抓取深圳 95 号汽油价格并提交更新 `fuel-price.json`。
 
+当前默认数据源优先级：
+
+1. 小熊油耗深圳市油价页：`https://www.xiaoxiongyouhao.com/fprice/cityprice.php?city=%E6%B7%B1%E5%9C%B3%E5%B8%82`
+2. 全国油价网广东页
+3. 15 天气深圳油价页
+
+小熊油耗页面中，`95#` 的 `最高价` 会写入 `price`，作为页面里的优惠前挂牌价；`车友实测优惠价` 会写入 `observedDiscountPrice`，并在 `note` 中记录。
+
 如果默认数据源不可用，可以在 GitHub 仓库的 `Settings` → `Secrets and variables` → `Actions` → `Variables` 中配置：
 
 - `FUEL_PRICE_SOURCE_URL`：自定义油价页面地址
 - `FUEL_PRICE_SOURCE_NAME`：自定义来源名称
 
-当前脚本优先使用自定义来源，再回退到内置公开页面。网页抓取受目标站点结构、访问限制和服务稳定性影响；如果抓取失败，会保留上一次价格并在 `note` 中记录失败原因。
+如果配置了自定义来源，脚本会优先使用自定义来源，再回退到内置公开页面。网页抓取受目标站点结构、访问限制和服务稳定性影响；如果抓取失败，会保留上一次价格并在 `note` 中记录失败原因。

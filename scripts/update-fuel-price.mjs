@@ -6,6 +6,10 @@ const PRICE_MAX = 12;
 
 const defaultSources = [
   {
+    name: "小熊油耗深圳市油价页",
+    url: "https://www.xiaoxiongyouhao.com/fprice/cityprice.php?city=%E6%B7%B1%E5%9C%B3%E5%B8%82"
+  },
+  {
     name: "全国油价网广东页",
     url: "https://www.qiyoujiage.com/guangdong.shtml"
   },
@@ -41,7 +45,9 @@ async function main() {
           sourceUrl: source.url,
           updatedAt: new Date().toISOString(),
           status: "ok",
-          note: result.note
+          note: result.note,
+          observedDiscountPrice: result.observedDiscountPrice ?? null,
+          observedDiscountPerLiter: result.observedDiscountPerLiter ?? null
         });
         console.log(`已更新深圳 95 号汽油价格：${result.price.toFixed(2)} 元/升，来源：${source.name}`);
         return;
@@ -117,12 +123,40 @@ function decodeBuffer(buffer, charset) {
 }
 
 function parsePrice(html) {
+  const text = normalize(stripTags(html));
+  const fromXiaoxiong = parseXiaoxiongPrice(text);
+  if (fromXiaoxiong) return fromXiaoxiong;
+
   const rows = extractRows(html);
   const fromRows = parseTableRows(rows);
   if (fromRows) return fromRows;
 
-  const text = normalize(stripTags(html));
   return parseFlatText(text);
+}
+
+function parseXiaoxiongPrice(text) {
+  if (!/小熊油耗|深圳市油价/.test(text)) return null;
+
+  const matchedDate = text.match(/深圳市油价\s+(\d{4}年\d{1,2}月\d{1,2}日)/);
+  const matchedPrice = text.match(/95\s*#\s*(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)/i);
+  if (!matchedPrice) return null;
+
+  const officialPrice = toValidPrice(matchedPrice[1]);
+  const observedPrice = toValidPrice(matchedPrice[2]);
+  if (!officialPrice) return null;
+
+  const noteParts = [
+    "按小熊油耗深圳市油价页解析，95# 最高价作为优惠前挂牌价。"
+  ];
+  if (matchedDate) noteParts.push(`页面日期：${matchedDate[1]}。`);
+  if (observedPrice) noteParts.push(`车友实测优惠价：${observedPrice.toFixed(2)} 元/升。`);
+
+  return {
+    price: officialPrice,
+    observedDiscountPrice: observedPrice,
+    observedDiscountPerLiter: observedPrice ? Number((officialPrice - observedPrice).toFixed(2)) : null,
+    note: noteParts.join("")
+  };
 }
 
 function parseTableRows(rows) {

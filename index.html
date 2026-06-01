@@ -165,6 +165,11 @@
       color: #ffe0a1;
     }
 
+    .source #sourceLink {
+      display: grid;
+      gap: 8px;
+    }
+
     main {
       display: grid;
       grid-template-columns: minmax(280px, 380px) minmax(0, 1fr);
@@ -662,9 +667,7 @@
           els.todayPrice.textContent = price(currentPrice);
           els.basePrice.value = price(currentPrice);
           els.priceMeta.textContent = `${data.city || "深圳"} · ${data.fuel || "95号汽油"} · 更新于 ${formatDate(data.updatedAt)}`;
-          els.sourceLink.innerHTML = data.sourceUrl
-            ? `<a href="${data.sourceUrl}" target="_blank" rel="noreferrer">查看数据来源</a>`
-            : data.source || "本地数据";
+          renderSourceInfo(data);
         } else {
           throw new Error("fuel-price.json 未提供有效价格");
         }
@@ -675,6 +678,28 @@
       } finally {
         setMode(state.mode);
       }
+    }
+
+    function renderSourceInfo(data) {
+      els.sourceLink.textContent = "";
+
+      const observedPrice = Number(data.observedDiscountPrice);
+      if (Number.isFinite(observedPrice) && observedPrice > 0) {
+        const observedLine = document.createElement("span");
+        observedLine.textContent = `车友实测优惠价：${price(observedPrice)} 元/升`;
+        els.sourceLink.appendChild(observedLine);
+      }
+
+      const sourceLine = data.sourceUrl ? document.createElement("a") : document.createElement("span");
+      if (data.sourceUrl) {
+        sourceLine.href = data.sourceUrl;
+        sourceLine.target = "_blank";
+        sourceLine.rel = "noreferrer";
+        sourceLine.textContent = "查看数据来源";
+      } else {
+        sourceLine.textContent = data.source || "本地数据";
+      }
+      els.sourceLink.appendChild(sourceLine);
     }
 
     function formatDate(value) {
