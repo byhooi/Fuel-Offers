@@ -1,0 +1,13 @@
+{
+  "city": "深圳",
+  "province": "广东",
+  "fuel": "95号汽油",
+  "price": 8.3,
+  "currency": "CNY",
+  "unit": "L",
+  "source": "手动初始值",
+  "sourceUrl": "",
+  "updatedAt": "2026-06-01T00:00:00+08:00",
+  "status": "manual",
+  "note": "GitHub Actions 成功运行后会自动更新为抓取结果。"
+}
