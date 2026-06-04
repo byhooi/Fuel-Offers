@@ -7,9 +7,9 @@
   "unit": "L",
   "source": "小熊油耗深圳市油价页",
   "sourceUrl": "https://www.xiaoxiongyouhao.com/fprice/cityprice.php?city=%E6%B7%B1%E5%9C%B3%E5%B8%82",
-  "updatedAt": "2026-06-03T00:09:41.530Z",
+  "updatedAt": "2026-06-04T00:12:24.581Z",
   "status": "ok",
-  "note": "按小熊油耗深圳市油价页解析，95# 最高价作为优惠前挂牌价。页面日期：2026年6月03日。车友实测优惠价：9.46 元/升。",
+  "note": "按小熊油耗深圳市油价页解析，95# 最高价作为优惠前挂牌价。页面日期：2026年6月04日。车友实测优惠价：9.46 元/升。",
   "observedDiscountPrice": 9.46,
   "observedDiscountPerLiter": 0.07
 }
