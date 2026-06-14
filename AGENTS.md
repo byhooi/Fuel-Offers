@@ -2,7 +2,7 @@
 
 ## 项目结构与模块组织
 
-这是一个可部署到 GitHub Pages 的静态页面项目。`index.html` 包含页面结构、样式和前端脚本，是主要业务入口。`config.json` 保存默认每升优惠金额，`fuel-price.json` 保存深圳 95 号汽油当前价格、来源和更新时间。`scripts/update-fuel-price.mjs` 负责抓取并更新油价数据。`.github/workflows/update-fuel-price.yml` 定时运行抓取脚本并自动提交 `fuel-price.json`。目前没有独立的 `src/`、`tests/` 或资产目录。
+这是一个部署到 Cloudflare Pages 的静态页面项目。`index.html` 包含页面结构、样式和前端脚本，是主要业务入口。`config.json` 保存默认每升优惠金额，`fuel-price.json` 保存深圳 95 号汽油当前价格、来源和更新时间。`scripts/update-fuel-price.mjs` 负责抓取并更新油价数据。`.github/workflows/update-fuel-price.yml` 定时运行抓取脚本并自动提交 `fuel-price.json`。目前没有独立的 `src/`、`tests/` 或资产目录。
 
 ## 构建、测试与本地开发命令
 

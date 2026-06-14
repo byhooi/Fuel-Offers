@@ -1,6 +1,6 @@
 # 深圳 95 号汽油优惠计算器
 
-这是一个可直接托管到 GitHub Pages 的静态网页，用于读取 `fuel-price.json` 中的深圳 95 号汽油价格，并根据每升优惠金额换算优惠前后的油费。
+这是一个部署在 Cloudflare Pages 上的静态网页，用于读取 `fuel-price.json` 中的深圳 95 号汽油价格，并根据每升优惠金额换算优惠前后的油费。
 
 ## 功能
 
@@ -18,7 +18,7 @@
 
 直接用浏览器打开 `index.html` 即可。由于浏览器对本地 `fetch` 有限制，直接打开时可能读不到 `fuel-price.json`，页面会自动使用手动输入的油价。
 
-如果要模拟 GitHub Pages 的读取方式，可以在目录中启动一个静态服务：
+如果要模拟线上静态托管的读取方式，可以在目录中启动一个静态服务：
 
 ```bash
 python -m http.server 8000
@@ -26,13 +26,13 @@ python -m http.server 8000
 
 然后访问 `http://localhost:8000`。
 
-## GitHub Pages 部署
+## Cloudflare Pages 部署
 
 1. 将本目录推送到 GitHub 仓库。
-2. 在仓库设置中进入 `Settings` → `Pages`。
-3. `Build and deployment` 选择 `Deploy from a branch`。
-4. 分支选择 `main`，目录选择 `/root`。
-5. 保存后等待 Pages 发布。
+2. 在 Cloudflare Pages 中连接该 GitHub 仓库。
+3. 构建设置保持静态站点配置：不需要构建命令，输出目录使用仓库根目录 `/`。
+4. 保存后等待 Cloudflare Pages 部署完成。
+5. 自定义域名在 Cloudflare Pages 的 `Custom domains` 中配置；仓库中的 `CNAME` 仅作为当前域名备忘，不参与 Cloudflare Pages 域名绑定。
 
 ## 默认优惠配置
 
@@ -57,6 +57,8 @@ python -m http.server 8000
 ## 自动更新油价
 
 `.github/workflows/update-fuel-price.yml` 会每天运行一次 `scripts/update-fuel-price.mjs`，抓取深圳 95 号汽油价格并提交更新 `fuel-price.json`。
+
+Cloudflare Pages 连接 GitHub 仓库后，`fuel-price.json` 的自动提交会触发一次新的 Pages 部署，让线上页面读取到最新数据。
 
 当前默认数据源优先级：
 
