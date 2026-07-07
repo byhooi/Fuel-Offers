@@ -3,6 +3,7 @@ name: Update fuel price
 on:
   schedule:
     - cron: "30 22 * * *"
+    - cron: "30 4 * * *"
   workflow_dispatch:
 
 permissions:
@@ -27,6 +28,7 @@ jobs:
         run: node scripts/update-fuel-price.mjs
 
       - name: Commit updated price
+        if: ${{ !cancelled() }}
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "Update Shenzhen 95 fuel price"

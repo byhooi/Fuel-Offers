@@ -34,6 +34,7 @@ async function main() {
       const html = await fetchText(source.url);
       const result = parsePrice(html);
       if (result) {
+        const now = new Date().toISOString();
         await writePrice({
           city: "深圳",
           province: "广东",
@@ -43,7 +44,8 @@ async function main() {
           unit: "L",
           source: source.name,
           sourceUrl: source.url,
-          updatedAt: new Date().toISOString(),
+          updatedAt: now,
+          lastAttemptAt: now,
           status: "ok",
           note: result.note,
           observedDiscountPrice: result.observedDiscountPrice ?? null,
@@ -58,9 +60,11 @@ async function main() {
     }
   }
 
+  // 保留上次价格和 updatedAt（价格最后确认时间），只更新尝试时间和状态，
+  // 前端依赖真实的 updatedAt 判断数据是否过期。
   await writePrice({
     ...previous,
-    updatedAt: new Date().toISOString(),
+    lastAttemptAt: new Date().toISOString(),
     status: "stale",
     note: `自动抓取失败，保留上次价格。失败信息：${errors.join("；")}`
   });
@@ -96,7 +100,8 @@ async function fetchText(url) {
     headers: {
       "user-agent": "Mozilla/5.0 (compatible; FuelOffersBot/1.0; +https://github.com/)",
       "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
-    }
+    },
+    signal: AbortSignal.timeout(15_000)
   });
 
   if (!response.ok) {
@@ -276,7 +281,8 @@ function hasShenzhen(value) {
 }
 
 function hasFuel95(value) {
-  return /95\s*(?:号|#)?\s*(?:汽油)?|95\s*#/i.test(value);
+  // 负向断言避免把 7.95、1995 之类的数字误判成 95 号汽油标签。
+  return /(?<![\d.])95\s*(?:号|#|汽油)/i.test(value);
 }
 
 function windowAround(text, pattern) {

@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>深圳 95 号汽油优惠计算器</title>
   <meta name="description" content="自动读取深圳 95 号汽油今日油价，按每升优惠金额换算优惠前后油费。">
+  <meta name="theme-color" content="#143b2e">
+  <meta property="og:title" content="深圳 95 号汽油优惠计算器">
+  <meta property="og:description" content="自动读取深圳 95 号汽油今日油价，按每升优惠金额换算优惠前后油费。">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="zh_CN">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⛽</text></svg>">
   <style>
     :root {
       --bg: #f4f0e8;
@@ -163,6 +169,26 @@
 
     .source a {
       color: #ffe0a1;
+    }
+
+    .stale-warning {
+      color: #ffd27d;
+    }
+
+    .apply-observed {
+      justify-self: start;
+      padding: 7px 12px;
+      border: 1px solid rgba(255, 224, 161, .55);
+      border-radius: 6px;
+      background: transparent;
+      color: #ffe0a1;
+      cursor: pointer;
+      font-size: 13px;
+      transition: background .16s ease;
+    }
+
+    .apply-observed:hover {
+      background: rgba(255, 224, 161, .14);
     }
 
     .source #sourceLink {
@@ -438,6 +464,7 @@
         </div>
         <div class="source">
           <span id="priceMeta">正在读取 fuel-price.json</span>
+          <span id="staleNotice" class="stale-warning" hidden></span>
           <span id="sourceLink"></span>
         </div>
       </aside>
@@ -468,10 +495,10 @@
 
           <div class="field">
             <label>换算方向</label>
-            <div class="segmented" role="tablist" aria-label="换算方向">
-              <button type="button" data-mode="before-to-after">优惠前 → 实付</button>
-              <button type="button" class="active" data-mode="after-to-before">实付 → 优惠前</button>
-              <button type="button" data-mode="liters-to-cost">加油量 → 油费</button>
+            <div class="segmented" role="radiogroup" aria-label="换算方向">
+              <button type="button" role="radio" aria-checked="false" data-mode="before-to-after">优惠前 → 实付</button>
+              <button type="button" role="radio" aria-checked="true" class="active" data-mode="after-to-before">实付 → 优惠前</button>
+              <button type="button" role="radio" aria-checked="false" data-mode="liters-to-cost">加油量 → 油费</button>
             </div>
           </div>
 
@@ -555,6 +582,7 @@
     const els = {
       todayPrice: document.querySelector("#todayPrice"),
       priceMeta: document.querySelector("#priceMeta"),
+      staleNotice: document.querySelector("#staleNotice"),
       sourceLink: document.querySelector("#sourceLink"),
       basePrice: document.querySelector("#basePrice"),
       discount: document.querySelector("#discount"),
@@ -600,14 +628,13 @@
 
     function setMode(mode) {
       if (!state.modeOrder.includes(mode)) return;
-      if (state.activeMode && state.activeMode !== mode) {
-        localStorage.setItem(`fuel-input-${state.activeMode}`, els.amount.value);
-      }
 
       state.mode = mode;
       localStorage.setItem("fuel-mode", mode);
       els.modeButtons.forEach((button) => {
-        button.classList.toggle("active", button.dataset.mode === mode);
+        const active = button.dataset.mode === mode;
+        button.classList.toggle("active", active);
+        button.setAttribute("aria-checked", String(active));
       });
 
       if (state.activeMode !== mode) {
@@ -652,9 +679,6 @@
       const discounted = basePrice - discount;
 
       els.discountedPrice.value = discounted > 0 ? price(discounted) : "--";
-      localStorage.setItem("fuel-discount", String(discount));
-      localStorage.setItem("fuel-base-price", String(basePrice));
-      localStorage.setItem(`fuel-input-${state.mode}`, els.amount.value);
 
       if (basePrice <= 0 || discounted <= 0) {
         setStatus(false, "请检查单价");
@@ -667,6 +691,10 @@
 
       if (inputAmount < 0) {
         setStatus(false, "金额无效");
+        els.primaryResult.textContent = "--";
+        els.savingResult.textContent = "--";
+        els.tertiaryResult.textContent = "--";
+        els.notice.textContent = "金额不能为负数。";
         return;
       }
 
@@ -732,6 +760,7 @@
           els.todayPrice.textContent = price(currentPrice);
           els.basePrice.value = price(currentPrice);
           els.priceMeta.textContent = `${data.city || "深圳"} · ${data.fuel || "95号汽油"} · 更新于 ${formatDate(data.updatedAt)}`;
+          renderFreshness(data);
           renderSourceInfo(data);
         } else {
           throw new Error("fuel-price.json 未提供有效价格");
@@ -740,8 +769,18 @@
         els.todayPrice.textContent = price(numberValue(els.basePrice));
         els.priceMeta.textContent = "未能读取自动油价，当前使用手动输入值";
         els.sourceLink.textContent = error.message;
-      } finally {
-        setMode(state.mode);
+      }
+    }
+
+    function renderFreshness(data) {
+      const updatedTime = new Date(data.updatedAt || "").getTime();
+      const tooOld = !Number.isFinite(updatedTime) || Date.now() - updatedTime > 48 * 60 * 60 * 1000;
+
+      if (data.status === "stale" || tooOld) {
+        els.staleNotice.textContent = `油价数据未及时更新，当前显示 ${formatDate(data.updatedAt)} 的价格，请以加油站实际价格为准。`;
+        els.staleNotice.hidden = false;
+      } else {
+        els.staleNotice.hidden = true;
       }
     }
 
@@ -755,9 +794,26 @@
         els.sourceLink.appendChild(observedLine);
       }
 
-      const sourceLine = data.sourceUrl ? document.createElement("a") : document.createElement("span");
-      if (data.sourceUrl) {
-        sourceLine.href = data.sourceUrl;
+      const observedDiscount = Number(data.observedDiscountPerLiter);
+      if (Number.isFinite(observedDiscount) && observedDiscount > 0) {
+        const applyButton = document.createElement("button");
+        applyButton.type = "button";
+        applyButton.className = "apply-observed";
+        applyButton.textContent = `应用实测优惠 ${price(observedDiscount)} 元/升`;
+        applyButton.addEventListener("click", () => {
+          els.discount.value = price(observedDiscount);
+          localStorage.setItem("fuel-discount", els.discount.value);
+          calculate();
+        });
+        els.sourceLink.appendChild(applyButton);
+      }
+
+      const safeSourceUrl = typeof data.sourceUrl === "string" && /^https?:\/\//i.test(data.sourceUrl)
+        ? data.sourceUrl
+        : "";
+      const sourceLine = safeSourceUrl ? document.createElement("a") : document.createElement("span");
+      if (safeSourceUrl) {
+        sourceLine.href = safeSourceUrl;
         sourceLine.target = "_blank";
         sourceLine.rel = "noreferrer";
         sourceLine.textContent = "查看数据来源";
@@ -790,16 +846,29 @@
       setMode(nextMode);
     });
     els.resetDefaults.addEventListener("click", () => {
+      // 清除本地记忆，让优惠重新跟随 config.json 的默认值。
+      localStorage.removeItem("fuel-discount");
       els.discount.value = state.defaultDiscount.toFixed(2);
       calculate();
     });
-    [els.basePrice, els.discount, els.amount].forEach((input) => {
-      input.addEventListener("input", calculate);
+
+    // 只在用户主动输入时持久化，避免首次打开页面就把默认值固化进 localStorage。
+    els.basePrice.addEventListener("input", () => {
+      localStorage.setItem("fuel-base-price", els.basePrice.value);
+      calculate();
+    });
+    els.discount.addEventListener("input", () => {
+      localStorage.setItem("fuel-discount", els.discount.value);
+      calculate();
+    });
+    els.amount.addEventListener("input", () => {
+      localStorage.setItem(`fuel-input-${state.mode}`, els.amount.value);
+      calculate();
     });
 
     async function init() {
-      await loadConfig();
-      await loadFuelPrice();
+      await Promise.all([loadConfig(), loadFuelPrice()]);
+      setMode(state.mode);
     }
 
     init();
