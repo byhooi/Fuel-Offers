@@ -123,6 +123,53 @@
       line-height: 1.8;
     }
 
+    .rental-entry {
+      position: relative;
+      z-index: 2;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 26px;
+      padding: 10px 14px 10px 10px;
+      border: 1px solid rgba(15, 78, 57, .32);
+      border-radius: 6px;
+      background: rgba(255, 253, 248, .82);
+      color: var(--green-deep);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 700;
+      transition: transform .16s ease, border-color .16s ease, background .16s ease;
+    }
+
+    .rental-entry::before {
+      content: "租";
+      display: grid;
+      place-items: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 4px;
+      background: var(--amber);
+      color: #42300c;
+      font-size: 13px;
+    }
+
+    .rental-entry:hover {
+      transform: translateY(-1px);
+      border-color: var(--green);
+      background: #fffdf8;
+    }
+
+    .rental-entry:focus-visible {
+      outline: 3px solid rgba(227, 163, 34, .55);
+      outline-offset: 3px;
+    }
+
+    .rental-entry small {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 400;
+    }
+
     .price-board {
       display: grid;
       align-content: space-between;
@@ -452,6 +499,10 @@
         <div class="kicker">深圳 95 号汽油</div>
         <h1>油价优惠换算台</h1>
         <p>读取今日基础油价，设置每升优惠金额后，快速在优惠前油费和实际支付油费之间互相推算。</p>
+        <a class="rental-entry" href="rental-fuel.html">
+          <span>租车还车补油</span>
+          <small>岳阳 92 号 →</small>
+        </a>
       </div>
 
       <aside class="price-board" aria-live="polite">
