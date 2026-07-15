@@ -27,9 +27,16 @@ jobs:
           FUEL_PRICE_SOURCE_NAME: ${{ vars.FUEL_PRICE_SOURCE_NAME }}
         run: node scripts/update-fuel-price.mjs
 
+      - name: Fetch Yueyang 92 rental fuel price
+        if: ${{ !cancelled() }}
+        env:
+          RENTAL_FUEL_PRICE_SOURCE_URL: ${{ vars.RENTAL_FUEL_PRICE_SOURCE_URL }}
+          RENTAL_FUEL_PRICE_SOURCE_NAME: ${{ vars.RENTAL_FUEL_PRICE_SOURCE_NAME }}
+        run: node scripts/update-rental-fuel-price.mjs
+
       - name: Commit updated price
         if: ${{ !cancelled() }}
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "Update Shenzhen 95 fuel price"
-          file_pattern: fuel-price.json
+          commit_message: "Update fuel prices"
+          file_pattern: fuel-price.json rental-fuel-price.json
