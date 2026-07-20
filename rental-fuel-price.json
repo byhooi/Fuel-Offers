@@ -8,7 +8,7 @@
   "source": "小熊油耗岳阳市油价页",
   "sourceUrl": "https://www.xiaoxiongyouhao.com/fprice/cityprice.php?city=%E5%B2%B3%E9%98%B3%E5%B8%82",
   "updatedAt": "2026-07-17T06:40:43.216Z",
-  "lastAttemptAt": "2026-07-19T23:25:48.227Z",
+  "lastAttemptAt": "2026-07-20T07:41:50.342Z",
   "status": "stale",
   "note": "自动抓取失败，保留上次价格。失败信息：未在页面中解析到岳阳 92 号汽油价格",
   "observedDiscountPrice": 6.33,
