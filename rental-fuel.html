@@ -417,7 +417,7 @@
           <div class="field">
             <label for="pickupLiters">取车时剩余油量</label>
             <div class="input-box">
-              <input id="pickupLiters" type="number" min="0" max="200" step="0.1" inputmode="decimal" value="40">
+              <input id="pickupLiters" type="number" min="0" max="200" step="0.1" inputmode="decimal" value="51">
               <span class="unit">升</span>
             </div>
           </div>
@@ -434,13 +434,13 @@
         <div class="result" aria-live="polite">
           <div class="result-main">
             <span>需要补加</span>
-            <strong id="litersResult">22.0 L</strong>
-            <small id="formulaHint">取车 40.0 L − 现在 18.0 L</small>
+            <strong id="litersResult">33.0 L</strong>
+            <small id="formulaHint">取车 51.0 L − 现在 18.0 L</small>
           </div>
           <div class="result-cost">
             <span>建议加油金额</span>
-            <strong id="costResult">160 元</strong>
-            <small id="costHint">按 ¥7.13/L 实付约 ¥156.86</small>
+            <strong id="costResult">240 元</strong>
+            <small id="costHint">按 ¥7.13/L 实付约 ¥235.29</small>
           </div>
           <div class="result-saving">
             <span>比挂牌价省</span>
@@ -466,7 +466,7 @@
       .forEach((key) => localStorage.removeItem(key));
 
     const defaults = {
-      pickupLiters: "40",
+      pickupLiters: "51",
       currentLiters: "18",
       price: "7.13"
     };
