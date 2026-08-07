@@ -7,10 +7,10 @@
   "unit": "L",
   "source": "小熊油耗岳阳市油价页",
   "sourceUrl": "https://www.xiaoxiongyouhao.com/fprice/cityprice.php?city=%E5%B2%B3%E9%98%B3%E5%B8%82",
-  "updatedAt": "2026-08-06T07:18:30.026Z",
-  "lastAttemptAt": "2026-08-06T07:18:30.026Z",
+  "updatedAt": "2026-08-07T01:35:50.370Z",
+  "lastAttemptAt": "2026-08-07T01:35:50.370Z",
   "status": "ok",
-  "note": "按小熊油耗岳阳市油价页解析，92# 最高价作为保守预算油价。页面日期：2026年8月6日。页面优惠价：7.62 元/升。",
+  "note": "按小熊油耗岳阳市油价页解析，92# 最高价作为保守预算油价。页面日期：2026年8月7日。页面优惠价：7.62 元/升。",
   "observedDiscountPrice": 7.62,
   "observedDiscountPerLiter": 0.3
 }
