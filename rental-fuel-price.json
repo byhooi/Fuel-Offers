@@ -2,15 +2,15 @@
   "city": "岳阳",
   "province": "湖南",
   "fuel": "92号汽油",
-  "price": 7.92,
+  "price": 7.73,
   "currency": "CNY",
   "unit": "L",
   "source": "小熊油耗岳阳市油价页",
   "sourceUrl": "https://www.xiaoxiongyouhao.com/fprice/cityprice.php?city=%E5%B2%B3%E9%98%B3%E5%B8%82",
-  "updatedAt": "2026-08-14T05:58:40.273Z",
-  "lastAttemptAt": "2026-08-15T22:45:01.459Z",
-  "status": "stale",
-  "note": "自动抓取失败，保留上次价格。失败信息：未在页面中解析到岳阳 92 号汽油价格",
-  "observedDiscountPrice": 7.12,
-  "observedDiscountPerLiter": 0.8
+  "updatedAt": "2026-08-16T05:02:06.982Z",
+  "lastAttemptAt": "2026-08-16T05:02:06.982Z",
+  "status": "ok",
+  "note": "按小熊油耗岳阳市油价页解析，92# 最高价作为保守预算油价。页面日期：2026年8月16日。页面优惠价：7.13 元/升。",
+  "observedDiscountPrice": 7.13,
+  "observedDiscountPerLiter": 0.6
 }
