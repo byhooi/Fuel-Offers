@@ -45,7 +45,7 @@ async function main() {
       status: "stale",
       note: `自动抓取失败，保留上次价格。失败信息：${error.message}`
     });
-    throw error;
+    console.error(error.message);
   }
 }
 

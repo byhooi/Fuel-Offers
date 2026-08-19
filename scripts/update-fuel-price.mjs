@@ -16,6 +16,18 @@ const defaultSources = [
   {
     name: "15天气深圳油价页",
     url: "https://youjia.15tianqi.com/shenzhen/"
+  },
+  {
+    name: "查价格深圳油价页",
+    url: "https://www.chajiage.com/youjia/shenzhen.html"
+  },
+  {
+    name: "汽车之家深圳油价页",
+    url: "https://www.autohome.com.cn/oil/440300.html"
+  },
+  {
+    name: "车主手册深圳95号汽油页",
+    url: "https://www.icauto.com.cn/oil/price_440300_4.html"
   }
 ];
 
@@ -68,7 +80,7 @@ async function main() {
     status: "stale",
     note: `自动抓取失败，保留上次价格。失败信息：${errors.join("；")}`
   });
-  throw new Error(errors.join("\n"));
+  console.error(errors.join("\n"));
 }
 
 async function readPrevious() {
@@ -207,6 +219,19 @@ function parseTableRows(rows) {
 }
 
 function parseFlatText(text) {
+  const directPatterns = [
+    /深圳\s*95\s*#\s*汽油\s*(\d+(?:\.\d+)?)/i,
+    /深圳\s*95\s*号汽油(?:为|价格为|最新价格为)?\s*(\d+(?:\.\d+)?)/i,
+    /95\s*号汽油(?:为|价格为|最新价格为)?\s*(\d+(?:\.\d+)?)\s*元/i,
+    /95\s*#\s*汽油\s*(\d+(?:\.\d+)?)/i
+  ];
+
+  for (const pattern of directPatterns) {
+    const matched = text.match(pattern);
+    const value = matched ? toValidPrice(matched[1]) : null;
+    if (value) return { price: value, note: "按页面中的深圳 95 号汽油明确价格解析。" };
+  }
+
   const cityWindow = windowAround(text, /深圳/);
   if (cityWindow) {
     const labeled = cityWindow.match(/95\s*(?:号|#)?\s*(?:汽油)?[^\d]{0,16}(\d+(?:\.\d+)?)/i);
