@@ -2,15 +2,15 @@
   "city": "深圳",
   "province": "广东",
   "fuel": "95号汽油",
-  "price": 8.45,
+  "price": 8.78,
   "currency": "CNY",
   "unit": "L",
   "source": "小熊油耗深圳市油价页",
   "sourceUrl": "https://www.xiaoxiongyouhao.com/fprice/cityprice.php?city=%E6%B7%B1%E5%9C%B3%E5%B8%82",
-  "updatedAt": "2026-08-28T16:51:35.948Z",
-  "lastAttemptAt": "2026-08-28T16:51:35.948Z",
+  "updatedAt": "2026-08-29T03:46:16.496Z",
+  "lastAttemptAt": "2026-08-29T03:46:16.496Z",
   "status": "ok",
-  "note": "按小熊油耗深圳市油价页解析，95# 最高价作为优惠前挂牌价。页面日期：2026年8月29日。车友实测优惠价：7.80 元/升。",
-  "observedDiscountPrice": 7.8,
-  "observedDiscountPerLiter": 0.65
+  "note": "按小熊油耗深圳市油价页解析，95# 最高价作为优惠前挂牌价。页面日期：2026年8月29日。车友实测优惠价：8.45 元/升。",
+  "observedDiscountPrice": 8.45,
+  "observedDiscountPerLiter": 0.33
 }
