@@ -5,12 +5,12 @@
   "price": 8.78,
   "currency": "CNY",
   "unit": "L",
-  "source": "查价格深圳油价页",
-  "sourceUrl": "https://www.chajiage.com/youjia/shenzhen.html",
-  "updatedAt": "2026-09-04T00:13:45.661Z",
-  "lastAttemptAt": "2026-09-04T00:13:45.661Z",
+  "source": "小熊油耗深圳市油价页",
+  "sourceUrl": "https://www.xiaoxiongyouhao.com/fprice/cityprice.php?city=%E6%B7%B1%E5%9C%B3%E5%B8%82",
+  "updatedAt": "2026-09-04T08:59:23.717Z",
+  "lastAttemptAt": "2026-09-04T08:59:23.717Z",
   "status": "ok",
-  "note": "按页面中的深圳 95 号汽油明确价格解析。",
-  "observedDiscountPrice": null,
-  "observedDiscountPerLiter": null
+  "note": "按小熊油耗深圳市油价页解析，95# 最高价作为优惠前挂牌价。页面日期：2026年9月4日。车友实测优惠价：8.45 元/升。",
+  "observedDiscountPrice": 8.45,
+  "observedDiscountPerLiter": 0.33
 }
