@@ -385,6 +385,99 @@
       line-height: 1.5;
     }
 
+    .metric-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .tank-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: rgba(22, 114, 79, .12);
+      color: var(--green-deep);
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.2;
+      white-space: nowrap;
+      transition: background .2s ease, color .2s ease;
+    }
+
+    .tank-badge.overflow {
+      background: rgba(227, 163, 34, .25);
+      color: #7b4f00;
+    }
+
+    .tank-gauge {
+      margin-top: 14px;
+    }
+
+    .tank-gauge-track {
+      position: relative;
+      height: 9px;
+      border-radius: 999px;
+      background: #e6dfd1;
+      box-shadow: inset 0 1px 2px rgba(25, 32, 29, .16);
+      overflow: hidden;
+    }
+
+    .tank-gauge-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #16724f, #2aa072);
+      transition: width .35s cubic-bezier(0.4, 0, 0.2, 1), background .25s ease;
+    }
+
+    .tank-gauge-fill.overflow {
+      background: linear-gradient(90deg, #d88918, #e3a322);
+    }
+
+    .tank-gauge-markers {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .tank-gauge-markers .marker {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      background: rgba(255, 255, 255, .7);
+      box-shadow: 0.5px 0 0 rgba(0, 0, 0, .08);
+    }
+
+    .tank-gauge-scale {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 6px;
+      font-size: 11px;
+      line-height: 1;
+    }
+
+    .tank-gauge-scale span {
+      display: inline;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--muted);
+    }
+
+    .tank-inline-hint {
+      margin-top: 8px;
+      padding: 6px 10px;
+      border-radius: 6px;
+      background: rgba(22, 114, 79, .08);
+      color: var(--green-deep);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
     .notice {
       margin-top: 18px;
       padding: 14px 16px;
@@ -545,6 +638,14 @@
           </div>
 
           <div class="field">
+            <label for="tankCapacity">油箱容积 (量化参考)</label>
+            <div class="input-wrap">
+              <input id="tankCapacity" type="number" min="1" max="500" step="1" inputmode="numeric" value="57">
+              <span class="unit">L</span>
+            </div>
+          </div>
+
+          <div class="field">
             <label>换算方向</label>
             <div class="segmented" role="radiogroup" aria-label="换算方向">
               <button type="button" role="radio" aria-checked="false" data-mode="before-to-after">优惠前 → 实付</button>
@@ -559,6 +660,7 @@
               <input id="amount" type="number" min="0" step="0.01" inputmode="decimal" value="300">
               <span class="unit" id="amountUnit">元</span>
             </div>
+            <div class="tank-inline-hint" id="tankInlineHint" hidden></div>
           </div>
 
           <div class="actions">
@@ -603,9 +705,29 @@
             <strong id="savingResult">--</strong>
             <small>同一升数下的价差</small>
           </div>
-          <div class="metric">
-            <span id="tertiaryLabel">约加油量</span>
+          <div class="metric" id="tertiaryMetric">
+            <div class="metric-head">
+              <span id="tertiaryLabel">约加油量</span>
+              <span class="tank-badge" id="tankBadge" hidden>--</span>
+            </div>
             <strong id="tertiaryResult">--</strong>
+            <div class="tank-gauge" id="tankGauge" hidden aria-hidden="true">
+              <div class="tank-gauge-track">
+                <div class="tank-gauge-fill" id="tankGaugeFill" style="width: 0%"></div>
+                <div class="tank-gauge-markers">
+                  <span class="marker" style="left: 25%"></span>
+                  <span class="marker" style="left: 50%"></span>
+                  <span class="marker" style="left: 75%"></span>
+                </div>
+              </div>
+              <div class="tank-gauge-scale">
+                <span>E (空)</span>
+                <span>1/4</span>
+                <span>1/2</span>
+                <span>3/4</span>
+                <span id="tankGaugeCapacityLabel">F (57L)</span>
+              </div>
+            </div>
             <small id="tertiaryHint">由输入金额反推</small>
           </div>
         </div>
@@ -622,6 +744,7 @@
       mode: localStorage.getItem("fuel-mode") || "after-to-before",
       activeMode: null,
       defaultDiscount: 0.4,
+      defaultTankCapacity: 57,
       defaultInputs: {
         "before-to-after": "300",
         "after-to-before": "300",
@@ -637,9 +760,11 @@
       sourceLink: document.querySelector("#sourceLink"),
       basePrice: document.querySelector("#basePrice"),
       discount: document.querySelector("#discount"),
+      tankCapacity: document.querySelector("#tankCapacity"),
       amount: document.querySelector("#amount"),
       amountUnit: document.querySelector("#amountUnit"),
       amountLabel: document.querySelector("#amountLabel"),
+      tankInlineHint: document.querySelector("#tankInlineHint"),
       discountedPrice: document.querySelector("#discountedPrice"),
       primaryLabel: document.querySelector("#primaryLabel"),
       primaryResult: document.querySelector("#primaryResult"),
@@ -648,12 +773,64 @@
       tertiaryLabel: document.querySelector("#tertiaryLabel"),
       tertiaryResult: document.querySelector("#tertiaryResult"),
       tertiaryHint: document.querySelector("#tertiaryHint"),
+      tankBadge: document.querySelector("#tankBadge"),
+      tankGauge: document.querySelector("#tankGauge"),
+      tankGaugeFill: document.querySelector("#tankGaugeFill"),
+      tankGaugeCapacityLabel: document.querySelector("#tankGaugeCapacityLabel"),
       notice: document.querySelector("#notice"),
       statusPill: document.querySelector("#statusPill"),
       swapMode: document.querySelector("#swapMode"),
       resetDefaults: document.querySelector("#resetDefaults"),
       modeButtons: [...document.querySelectorAll("[data-mode]")]
     };
+
+    function getTankMetrics(liters, capacity) {
+      if (!Number.isFinite(liters) || liters <= 0 || !Number.isFinite(capacity) || capacity <= 0) {
+        return null;
+      }
+      const ratio = liters / capacity;
+      const pct = ratio * 100;
+      const isOverflow = ratio > 1.02;
+
+      let fractionText = "";
+      if (ratio < 0.18) {
+        fractionText = "约 1/8 箱";
+      } else if (ratio < 0.30) {
+        fractionText = "约 1/4 箱";
+      } else if (ratio < 0.42) {
+        fractionText = "约 1/3 箱";
+      } else if (ratio < 0.58) {
+        fractionText = "约半箱";
+      } else if (ratio < 0.70) {
+        fractionText = "约 2/3 箱";
+      } else if (ratio < 0.82) {
+        fractionText = "约 3/4 箱";
+      } else if (ratio < 0.95) {
+        fractionText = "约 7/8 箱";
+      } else if (ratio <= 1.02) {
+        fractionText = "约满箱";
+      } else {
+        fractionText = `超满箱 +${(liters - capacity).toFixed(1)}L`;
+      }
+
+      const badgeText = isOverflow
+        ? `超满箱 · ${pct.toFixed(0)}%`
+        : `${pct.toFixed(1)}% · ${fractionText}`;
+
+      const hintText = isOverflow
+        ? `超过 ${capacity}L 满箱约 ${(liters - capacity).toFixed(1)}L（达 ${pct.toFixed(0)}%）`
+        : `约占 ${capacity}L 油箱的 ${pct.toFixed(1)}%（${fractionText}）`;
+
+      return {
+        ratio,
+        pct,
+        fillWidth: Math.min(100, Math.max(0, pct)),
+        isOverflow,
+        fractionText,
+        badgeText,
+        hintText
+      };
+    }
 
     function numberValue(input) {
       const value = Number.parseFloat(input.value);
@@ -709,6 +886,7 @@
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const config = await response.json();
         const defaultDiscount = Number(config.defaultDiscountPerLiter);
+        const defaultTankCapacity = Number(config.defaultTankCapacity);
 
         if (Number.isFinite(defaultDiscount) && defaultDiscount >= 0) {
           state.defaultDiscount = defaultDiscount;
@@ -716,9 +894,19 @@
             els.discount.value = defaultDiscount.toFixed(2);
           }
         }
+
+        if (Number.isFinite(defaultTankCapacity) && defaultTankCapacity > 0) {
+          state.defaultTankCapacity = defaultTankCapacity;
+          if (!localStorage.getItem("fuel-tank-capacity")) {
+            els.tankCapacity.value = defaultTankCapacity.toString();
+          }
+        }
       } catch {
         if (!localStorage.getItem("fuel-discount")) {
           els.discount.value = state.defaultDiscount.toFixed(2);
+        }
+        if (!localStorage.getItem("fuel-tank-capacity")) {
+          els.tankCapacity.value = state.defaultTankCapacity.toString();
         }
       }
     }
@@ -726,16 +914,21 @@
     function calculate() {
       const basePrice = numberValue(els.basePrice);
       const discount = numberValue(els.discount);
+      const tankCapacity = numberValue(els.tankCapacity) || state.defaultTankCapacity;
       const inputAmount = numberValue(els.amount);
       const discounted = basePrice - discount;
 
       els.discountedPrice.value = discounted > 0 ? price(discounted) : "--";
+      els.tankGaugeCapacityLabel.textContent = `F (${tankCapacity}L)`;
 
       if (basePrice <= 0 || discounted <= 0) {
         setStatus(false, "请检查单价");
         els.primaryResult.textContent = "--";
         els.savingResult.textContent = "--";
         els.tertiaryResult.textContent = "--";
+        els.tankBadge.hidden = true;
+        els.tankGauge.hidden = true;
+        els.tankInlineHint.hidden = true;
         els.notice.textContent = "挂牌价必须大于 0，且每升优惠不能大于或等于挂牌价。";
         return;
       }
@@ -745,6 +938,9 @@
         els.primaryResult.textContent = "--";
         els.savingResult.textContent = "--";
         els.tertiaryResult.textContent = "--";
+        els.tankBadge.hidden = true;
+        els.tankGauge.hidden = true;
+        els.tankInlineHint.hidden = true;
         els.notice.textContent = "金额不能为负数。";
         return;
       }
@@ -763,8 +959,25 @@
         els.primaryLabel.textContent = "实付油费";
         els.primaryHint.textContent = `优惠前 ${money(inputAmount)} 可加约 ${liters(fuelLiters)}`;
         els.tertiaryLabel.textContent = "约加油量";
-        els.tertiaryHint.textContent = "由输入金额反推";
         els.tertiaryResult.textContent = liters(fuelLiters);
+
+        const tank = getTankMetrics(fuelLiters, tankCapacity);
+        if (tank) {
+          els.tankBadge.hidden = false;
+          els.tankBadge.textContent = tank.badgeText;
+          els.tankBadge.classList.toggle("overflow", tank.isOverflow);
+          els.tankGauge.hidden = false;
+          els.tankGaugeFill.style.width = `${tank.fillWidth}%`;
+          els.tankGaugeFill.classList.toggle("overflow", tank.isOverflow);
+          els.tertiaryHint.textContent = tank.hintText;
+        } else {
+          els.tankBadge.hidden = true;
+          els.tankGauge.hidden = false;
+          els.tankGaugeFill.style.width = "0%";
+          els.tankGaugeFill.classList.remove("overflow");
+          els.tertiaryHint.textContent = "由输入金额反推";
+        }
+        els.tankInlineHint.hidden = true;
       } else if (state.mode === "after-to-before") {
         fuelLiters = inputAmount / discounted;
         resultAmount = fuelLiters * basePrice;
@@ -772,18 +985,48 @@
         els.primaryLabel.textContent = "优惠前油费";
         els.primaryHint.textContent = `实付 ${money(inputAmount)} 可加约 ${liters(fuelLiters)}`;
         els.tertiaryLabel.textContent = "约加油量";
-        els.tertiaryHint.textContent = "由输入金额反推";
         els.tertiaryResult.textContent = liters(fuelLiters);
+
+        const tank = getTankMetrics(fuelLiters, tankCapacity);
+        if (tank) {
+          els.tankBadge.hidden = false;
+          els.tankBadge.textContent = tank.badgeText;
+          els.tankBadge.classList.toggle("overflow", tank.isOverflow);
+          els.tankGauge.hidden = false;
+          els.tankGaugeFill.style.width = `${tank.fillWidth}%`;
+          els.tankGaugeFill.classList.toggle("overflow", tank.isOverflow);
+          els.tertiaryHint.textContent = tank.hintText;
+        } else {
+          els.tankBadge.hidden = true;
+          els.tankGauge.hidden = false;
+          els.tankGaugeFill.style.width = "0%";
+          els.tankGaugeFill.classList.remove("overflow");
+          els.tertiaryHint.textContent = "由输入金额反推";
+        }
+        els.tankInlineHint.hidden = true;
       } else {
         fuelLiters = inputAmount;
         beforeAmount = fuelLiters * basePrice;
         resultAmount = fuelLiters * discounted;
         saving = beforeAmount - resultAmount;
+        const tank = getTankMetrics(fuelLiters, tankCapacity);
+
         els.primaryLabel.textContent = "实付油费";
-        els.primaryHint.textContent = `加油 ${liters(fuelLiters)} 的优惠后金额`;
+        els.primaryHint.textContent = tank
+          ? `加油 ${liters(fuelLiters)}（约占 ${tankCapacity}L 油箱 ${tank.pct.toFixed(1)}%）的优惠后金额`
+          : `加油 ${liters(fuelLiters)} 的优惠后金额`;
         els.tertiaryLabel.textContent = "优惠前油费";
         els.tertiaryHint.textContent = "按挂牌价计算";
         els.tertiaryResult.textContent = money(beforeAmount);
+
+        els.tankBadge.hidden = true;
+        els.tankGauge.hidden = true;
+        if (tank) {
+          els.tankInlineHint.hidden = false;
+          els.tankInlineHint.textContent = `⛽ 约占 ${tankCapacity}L 油箱的 ${tank.pct.toFixed(1)}%（${tank.fractionText}）`;
+        } else {
+          els.tankInlineHint.hidden = true;
+        }
       }
 
       els.primaryResult.textContent = money(resultAmount);
@@ -794,11 +1037,15 @@
     async function loadFuelPrice() {
       const savedDiscount = Number.parseFloat(localStorage.getItem("fuel-discount"));
       const savedBasePrice = Number.parseFloat(localStorage.getItem("fuel-base-price"));
+      const savedTankCapacity = Number.parseFloat(localStorage.getItem("fuel-tank-capacity"));
       if (Number.isFinite(savedDiscount)) {
         els.discount.value = savedDiscount.toFixed(2);
       }
       if (Number.isFinite(savedBasePrice)) {
         els.basePrice.value = savedBasePrice.toFixed(2);
+      }
+      if (Number.isFinite(savedTankCapacity) && savedTankCapacity > 0) {
+        els.tankCapacity.value = savedTankCapacity.toString();
       }
 
       try {
@@ -897,9 +1144,11 @@
       setMode(nextMode);
     });
     els.resetDefaults.addEventListener("click", () => {
-      // 清除本地记忆，让优惠重新跟随 config.json 的默认值。
+      // 清除本地记忆，让优惠与油箱容积重新跟随默认值。
       localStorage.removeItem("fuel-discount");
+      localStorage.removeItem("fuel-tank-capacity");
       els.discount.value = state.defaultDiscount.toFixed(2);
+      els.tankCapacity.value = state.defaultTankCapacity.toString();
       calculate();
     });
 
@@ -910,6 +1159,10 @@
     });
     els.discount.addEventListener("input", () => {
       localStorage.setItem("fuel-discount", els.discount.value);
+      calculate();
+    });
+    els.tankCapacity.addEventListener("input", () => {
+      localStorage.setItem("fuel-tank-capacity", els.tankCapacity.value);
       calculate();
     });
     els.amount.addEventListener("input", () => {

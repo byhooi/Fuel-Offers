@@ -1,3 +1,4 @@
 {
-  "defaultDiscountPerLiter": 0.4
+  "defaultDiscountPerLiter": 0.4,
+  "defaultTankCapacity": 57
 }
