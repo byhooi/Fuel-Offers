@@ -433,6 +433,7 @@
       margin-top: 6px;
       font-size: 11px;
       line-height: 1;
+      font-variant-numeric: tabular-nums;
     }
 
     .tank-gauge-scale span {
@@ -440,6 +441,7 @@
       font-size: 11px;
       font-weight: 500;
       color: var(--muted);
+      white-space: nowrap;
     }
 
     .tank-inline-hint {
@@ -754,6 +756,11 @@
       modeButtons: [...document.querySelectorAll("[data-mode]")]
     };
 
+    function getValidTankCapacity() {
+      const capacity = numberValue(els.tankCapacity);
+      return capacity > 0 && capacity <= 500 ? capacity : state.defaultTankCapacity;
+    }
+
     function getTankMetrics(liters, capacity) {
       if (!Number.isFinite(liters) || liters <= 0 || !Number.isFinite(capacity) || capacity <= 0) {
         return null;
@@ -763,7 +770,9 @@
       const isOverflow = ratio > 1.02;
 
       let fractionText = "";
-      if (ratio < 0.18) {
+      if (ratio < 0.05) {
+        fractionText = "不足 1/8 箱";
+      } else if (ratio < 0.18) {
         fractionText = "约 1/8 箱";
       } else if (ratio < 0.30) {
         fractionText = "约 1/4 箱";
@@ -795,6 +804,21 @@
         fractionText,
         hintText
       };
+    }
+
+    function updateTankGauge(fuelLiters, tankCapacity) {
+      const tank = getTankMetrics(fuelLiters, tankCapacity);
+      if (tank) {
+        els.tankGauge.hidden = false;
+        els.tankGaugeFill.style.width = `${tank.fillWidth}%`;
+        els.tankGaugeFill.classList.toggle("overflow", tank.isOverflow);
+        els.tertiaryHint.textContent = tank.hintText;
+      } else {
+        els.tankGauge.hidden = false;
+        els.tankGaugeFill.style.width = "0%";
+        els.tankGaugeFill.classList.remove("overflow");
+        els.tertiaryHint.textContent = "由输入金额反推";
+      }
     }
 
     function numberValue(input) {
@@ -879,7 +903,7 @@
     function calculate() {
       const basePrice = numberValue(els.basePrice);
       const discount = numberValue(els.discount);
-      const tankCapacity = numberValue(els.tankCapacity) || state.defaultTankCapacity;
+      const tankCapacity = getValidTankCapacity();
       const inputAmount = numberValue(els.amount);
       const discounted = basePrice - discount;
 
@@ -923,19 +947,7 @@
         els.primaryHint.textContent = `优惠前 ${money(inputAmount)} 可加约 ${liters(fuelLiters)}`;
         els.tertiaryLabel.textContent = "约加油量";
         els.tertiaryResult.textContent = liters(fuelLiters);
-
-        const tank = getTankMetrics(fuelLiters, tankCapacity);
-        if (tank) {
-          els.tankGauge.hidden = false;
-          els.tankGaugeFill.style.width = `${tank.fillWidth}%`;
-          els.tankGaugeFill.classList.toggle("overflow", tank.isOverflow);
-          els.tertiaryHint.textContent = tank.hintText;
-        } else {
-          els.tankGauge.hidden = false;
-          els.tankGaugeFill.style.width = "0%";
-          els.tankGaugeFill.classList.remove("overflow");
-          els.tertiaryHint.textContent = "由输入金额反推";
-        }
+        updateTankGauge(fuelLiters, tankCapacity);
         els.tankInlineHint.hidden = true;
       } else if (state.mode === "after-to-before") {
         fuelLiters = inputAmount / discounted;
@@ -945,19 +957,7 @@
         els.primaryHint.textContent = `实付 ${money(inputAmount)} 可加约 ${liters(fuelLiters)}`;
         els.tertiaryLabel.textContent = "约加油量";
         els.tertiaryResult.textContent = liters(fuelLiters);
-
-        const tank = getTankMetrics(fuelLiters, tankCapacity);
-        if (tank) {
-          els.tankGauge.hidden = false;
-          els.tankGaugeFill.style.width = `${tank.fillWidth}%`;
-          els.tankGaugeFill.classList.toggle("overflow", tank.isOverflow);
-          els.tertiaryHint.textContent = tank.hintText;
-        } else {
-          els.tankGauge.hidden = false;
-          els.tankGaugeFill.style.width = "0%";
-          els.tankGaugeFill.classList.remove("overflow");
-          els.tertiaryHint.textContent = "由输入金额反推";
-        }
+        updateTankGauge(fuelLiters, tankCapacity);
         els.tankInlineHint.hidden = true;
       } else {
         fuelLiters = inputAmount;
@@ -998,7 +998,7 @@
       if (Number.isFinite(savedBasePrice)) {
         els.basePrice.value = savedBasePrice.toFixed(2);
       }
-      if (Number.isFinite(savedTankCapacity) && savedTankCapacity > 0) {
+      if (Number.isFinite(savedTankCapacity) && savedTankCapacity > 0 && savedTankCapacity <= 500) {
         els.tankCapacity.value = savedTankCapacity.toString();
       }
 
@@ -1116,7 +1116,10 @@
       calculate();
     });
     els.tankCapacity.addEventListener("input", () => {
-      localStorage.setItem("fuel-tank-capacity", els.tankCapacity.value);
+      const val = Number.parseFloat(els.tankCapacity.value);
+      if (Number.isFinite(val) && val > 0 && val <= 500) {
+        localStorage.setItem("fuel-tank-capacity", val.toString());
+      }
       calculate();
     });
     els.amount.addEventListener("input", () => {

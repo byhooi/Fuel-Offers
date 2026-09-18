@@ -3,6 +3,9 @@ import { readFile, writeFile } from "node:fs/promises";
 const OUTPUT_FILE = new URL("../fuel-price.json", import.meta.url);
 const PRICE_MIN = 5;
 const PRICE_MAX = 12;
+// 价格未变化时，距上次确认不足此时长则跳过写入，避免每次运行都产生提交和部署。
+// 阈值需小于前端的 48 小时过期判定，按每天 6:30/12:30 两班计算，最长间隔约 42 小时。
+const HEARTBEAT_MS = 28 * 60 * 60 * 1000;
 
 const defaultSources = [
   {
@@ -46,6 +49,10 @@ async function main() {
       const html = await fetchText(source.url);
       const result = parsePrice(html);
       if (result) {
+        if (isUnchanged(previous, result)) {
+          console.log(`深圳 95 号汽油价格未变化：${result.price.toFixed(2)} 元/升，距上次确认不足 ${HEARTBEAT_MS / 3_600_000} 小时，跳过写入`);
+          return;
+        }
         const now = new Date().toISOString();
         await writePrice({
           city: "深圳",
@@ -81,6 +88,14 @@ async function main() {
     note: `自动抓取失败，保留上次价格。失败信息：${errors.join("；")}`
   });
   console.error(errors.join("\n"));
+}
+
+function isUnchanged(previous, result) {
+  if (previous.status !== "ok") return false;
+  if (previous.price !== result.price) return false;
+  if ((previous.observedDiscountPrice ?? null) !== (result.observedDiscountPrice ?? null)) return false;
+  const updatedTime = new Date(previous.updatedAt || "").getTime();
+  return Number.isFinite(updatedTime) && Date.now() - updatedTime < HEARTBEAT_MS;
 }
 
 async function readPrevious() {
