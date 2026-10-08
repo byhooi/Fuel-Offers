@@ -1,10 +1,10 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+本文件为 Claude Code 在此仓库中工作提供指引。
 
 ## 项目概览
 
-深圳 95 号汽油优惠计算器:一个部署在 Cloudflare Pages 上的纯静态单页应用,无构建步骤、无依赖、无测试框架。所有文档、注释和 UI 文案均使用中文;提交信息使用简短英文(如 `Add fuel volume conversion`)。
+深圳 95 号汽油优惠计算器:一个部署在 GitHub Pages 上的纯静态应用,无构建步骤、无依赖、无测试框架。自定义域名为 `jy.468024.xyz`,以仓库根目录的 `CNAME` 为准。所有文档、注释和 UI 文案均使用中文;提交信息使用简短英文(如 `Add fuel volume conversion`)。
 
 ## 常用命令
 
@@ -27,8 +27,10 @@ node -e "JSON.parse(require('fs').readFileSync('config.json','utf8')); JSON.pars
 
 1. `.github/workflows/update-fuel-price.yml` 每天两班(22:30 与 4:30 UTC,北京时间约 6:30 和 12:30,前者配合国内 24 时调价生效,后者作为失败重试)运行抓取脚本;
 2. `scripts/update-fuel-price.mjs` 按优先级尝试数据源(环境变量自定义源 → 小熊油耗 → 全国油价网 → 15 天气),解析出价格后写入 `fuel-price.json`;全部失败时保留上次价格和 `updatedAt`,写入 `status: "stale"` 与 `lastAttemptAt`,然后抛错使 workflow 标红(提交 step 带 `if: ${{ !cancelled() }}`,失败时 stale 状态仍会被提交);
-3. `git-auto-commit-action` 提交 `fuel-price.json`,该提交触发 Cloudflare Pages 重新部署;
+3. `git-auto-commit-action` 提交 `fuel-price.json` 和 `rental-fuel-price.json`;GitHub Pages 发布情况应核对 Actions 中对应提交的 `pages build and deployment` 记录,不能仅凭仓库没有独立部署工作流就判定发布中断;
 4. `index.html` 前端 fetch 读取 `fuel-price.json` 和 `config.json` 完成展示与计算。
+
+GitHub Pages 发布来源与自定义域名在仓库 `Settings` → `Pages` 中管理。按分支发布时,`CNAME` 参与自定义域名配置;若改用自定义 Actions 发布,则以 Pages 设置中的域名为准。部署说明与自动更新验证方式见 `README.md`。
 
 ### 抓取脚本(scripts/update-fuel-price.mjs)
 

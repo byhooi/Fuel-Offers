@@ -2,7 +2,7 @@
 
 ## 项目结构与模块组织
 
-这是一个部署到 Cloudflare Pages 的静态页面项目。`index.html` 包含页面结构、样式和前端脚本，是主要业务入口。`config.json` 保存默认每升优惠金额，`fuel-price.json` 保存深圳 95 号汽油当前价格、来源和更新时间。`scripts/update-fuel-price.mjs` 负责抓取并更新油价数据。`.github/workflows/update-fuel-price.yml` 定时运行抓取脚本并自动提交 `fuel-price.json`。目前没有独立的 `src/`、`tests/` 或资产目录。
+这是一个部署到 GitHub Pages 的静态页面项目，自定义域名为 `jy.468024.xyz`，以仓库根目录的 `CNAME` 为准。`index.html` 包含页面结构、样式和前端脚本，是主要业务入口。`config.json` 保存默认每升优惠金额，`fuel-price.json` 保存深圳 95 号汽油当前价格、来源和更新时间。`scripts/update-fuel-price.mjs` 负责抓取并更新油价数据。`.github/workflows/update-fuel-price.yml` 定时运行抓取脚本并自动提交 `fuel-price.json`。目前没有独立的 `src/`、`tests/` 或资产目录。
 
 ## 构建、测试与本地开发命令
 
@@ -27,3 +27,5 @@ HTML、CSS、JavaScript 保持在 `index.html` 内，除非功能明显扩大。
 ## 安全与配置提示
 
 不要把私密来源、凭据或临时调试数据写入仓库。抓取来源可通过 GitHub Actions Variables 配置 `FUEL_PRICE_SOURCE_URL` 和 `FUEL_PRICE_SOURCE_NAME`。修改自动提交工作流时，保留最小权限 `contents: write`，避免扩大权限范围。
+
+GitHub Pages 的发布来源和自定义域名在仓库 `Settings` → `Pages` 中配置。按分支发布时，根目录 `CNAME` 用于自定义域名配置，不是备忘文件。验证油价自动更新时，应核对 GitHub Actions 中油价提交对应的 Pages 构建与部署记录，并检查线上 JSON；不要仅凭本地没有独立的部署工作流就判定发布中断，详见 `README.md`。

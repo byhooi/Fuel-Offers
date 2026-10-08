@@ -1,6 +1,8 @@
 # 深圳 95 号汽油优惠计算器
 
-这是一个部署在 Cloudflare Pages 上的静态网页，用于读取 `fuel-price.json` 中的深圳 95 号汽油价格，并根据每升优惠金额换算优惠前后的油费。
+这是一个部署在 GitHub Pages 上的静态网页，用于读取 `fuel-price.json` 中的深圳 95 号汽油价格，并根据每升优惠金额换算优惠前后的油费。
+
+线上地址：[汽油优惠计算器](https://jy.468024.xyz/) · [租车还车补油](https://jy.468024.xyz/rental-fuel.html)。当前自定义域名以仓库根目录的 `CNAME` 为准。
 
 项目同时提供 `rental-fuel.html`，用于计算湖南岳阳租车还车前需要补加的 92 号汽油量和费用。该页面根据租车 App 油量传感器显示的取车与当前剩余升数直接相减得到缺口，按加油站实际枪价折算建议加油金额（向上取整到 10 元），并显示相比挂牌价省了多少。
 
@@ -33,13 +35,17 @@ python -m http.server 8000
 
 租车还车补油页面地址为 `http://localhost:8000/rental-fuel.html`。
 
-## Cloudflare Pages 部署
+## GitHub Pages 部署
 
-1. 将本目录推送到 GitHub 仓库。
-2. 在 Cloudflare Pages 中连接该 GitHub 仓库。
-3. 构建设置保持静态站点配置：不需要构建命令，输出目录使用仓库根目录 `/`。
-4. 保存后等待 Cloudflare Pages 部署完成。
-5. 自定义域名在 Cloudflare Pages 的 `Custom domains` 中配置；仓库中的 `CNAME` 仅作为当前域名备忘，不参与 Cloudflare Pages 域名绑定。
+本项目无需构建，可从仓库根目录直接发布。分支发布方式的配置如下，实际发布来源以仓库设置为准：
+
+1. 将本目录推送到 GitHub 仓库的 `main` 分支。
+2. 打开仓库 `Settings` → `Pages`，将 `Source` 设为 `Deploy from a branch`。
+3. 发布分支选择 `main`，目录选择 `/ (root)`，保存后等待部署完成。
+4. 在 `Custom domain` 中配置 `jy.468024.xyz`，并确保根目录 `CNAME` 保持相同域名；文件只包含域名，不带协议或路径。
+5. 在 DNS 服务商处将子域名 `jy` 的 CNAME 记录指向 `byhooi.github.io`。等待 DNS 校验和证书签发完成后，在 Pages 设置中启用 `Enforce HTTPS`。
+
+按分支发布时，仓库中的 `CNAME` 用于自定义域名配置，不再只是备忘文件；如果使用自定义 GitHub Actions 发布，GitHub 会忽略该文件，应在 Pages 设置中配置域名。参见 [GitHub Pages 自定义域名说明](https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site/managing-a-custom-domain-for-your-github-pages-site)。
 
 ## 默认优惠配置
 
@@ -67,7 +73,7 @@ python -m http.server 8000
 
 同一工作流还会运行 `scripts/update-rental-fuel-price.mjs`，从小熊油耗岳阳市油价页抓取 92 号汽油最高价和优惠价，并更新 `rental-fuel-price.json`。租车页面把最高价作为默认枪价和优惠对比基准，可一键改用页面提供的车友实测优惠价，也可手动填入常去油站的实际枪价（会被浏览器记住）。
 
-Cloudflare Pages 连接 GitHub 仓库后，`fuel-price.json` 的自动提交会触发一次新的 Pages 部署，让线上页面读取到最新数据。
+**发布验证：** 油价数据提交和网站部署是两个环节。检查自动更新时，应在 GitHub Actions 中确认油价提交对应的 `pages build and deployment` 已成功，再核对线上 `fuel-price.json` 与 `rental-fuel-price.json`。分支发布使用 GitHub 管理的 Pages 流程，仓库没有独立的部署 YAML 不代表缺少部署。2026-10-08 的实际记录显示，自动油价提交 `34ae475` 已完成 [Pages 构建与部署](https://github.com/byhooi/Fuel-Offers/actions/runs/37770829007)，不应将当前流程描述为发布中断。
 
 当前默认数据源优先级：
 
