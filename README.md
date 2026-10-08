@@ -73,6 +73,8 @@ python -m http.server 8000
 
 同一工作流还会运行 `scripts/update-rental-fuel-price.mjs`，从小熊油耗岳阳市油价页抓取 92 号汽油最高价和优惠价，并更新 `rental-fuel-price.json`。租车页面把最高价作为默认枪价和优惠对比基准，可一键改用页面提供的车友实测优惠价，也可手动填入常去油站的实际枪价（会被浏览器记住）。
 
+两个脚本采用相同的更新策略：每次抓取成功都会写入对应 JSON，并刷新 `updatedAt` 和 `lastAttemptAt`，即使价格没有变化；手动运行与定时运行行为一致。项目迁移到 GitHub Pages 后，已移除原先为减少 Cloudflare Pages 部署次数设置的深圳油价 28 小时跳过写入逻辑。抓取失败时仍保留上次价格和 `updatedAt`，更新 `lastAttemptAt`、`status` 和失败说明。
+
 **发布验证：** 油价数据提交和网站部署是两个环节。检查自动更新时，应在 GitHub Actions 中确认油价提交对应的 `pages build and deployment` 已成功，再核对线上 `fuel-price.json` 与 `rental-fuel-price.json`。分支发布使用 GitHub 管理的 Pages 流程，仓库没有独立的部署 YAML 不代表缺少部署。2026-10-08 的实际记录显示，自动油价提交 `34ae475` 已完成 [Pages 构建与部署](https://github.com/byhooi/Fuel-Offers/actions/runs/37770829007)，不应将当前流程描述为发布中断。
 
 当前默认数据源优先级：
