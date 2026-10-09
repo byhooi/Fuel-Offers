@@ -222,25 +222,13 @@
       color: #ffd27d;
     }
 
-    .apply-observed {
-      justify-self: start;
-      padding: 7px 12px;
-      border: 1px solid rgba(255, 224, 161, .55);
-      border-radius: 6px;
-      background: transparent;
-      color: #ffe0a1;
-      cursor: pointer;
-      font-size: 13px;
-      transition: background .16s ease;
-    }
-
-    .apply-observed:hover {
-      background: rgba(255, 224, 161, .14);
-    }
-
     .source #sourceLink {
       display: grid;
       gap: 8px;
+    }
+
+    .price-adjustment {
+      color: #ffe0a1;
     }
 
     main {
@@ -584,6 +572,7 @@
         </div>
         <div class="source">
           <span id="priceMeta">正在读取 fuel-price.json</span>
+          <span class="price-adjustment" id="priceAdjustment" title="北京时间；日期来自小熊油耗，以官方通知为准。" hidden><span id="adjustmentHeading">下次调价：</span><time id="adjustmentDate"></time><span id="adjustmentStatus"></span></span>
           <span id="staleNotice" class="stale-warning" hidden></span>
           <span id="sourceLink"></span>
         </div>
@@ -731,6 +720,10 @@
       priceMeta: document.querySelector("#priceMeta"),
       staleNotice: document.querySelector("#staleNotice"),
       sourceLink: document.querySelector("#sourceLink"),
+      priceAdjustment: document.querySelector("#priceAdjustment"),
+      adjustmentHeading: document.querySelector("#adjustmentHeading"),
+      adjustmentDate: document.querySelector("#adjustmentDate"),
+      adjustmentStatus: document.querySelector("#adjustmentStatus"),
       basePrice: document.querySelector("#basePrice"),
       discount: document.querySelector("#discount"),
       tankCapacity: document.querySelector("#tankCapacity"),
@@ -755,6 +748,50 @@
       resetDefaults: document.querySelector("#resetDefaults"),
       modeButtons: [...document.querySelectorAll("[data-mode]")]
     };
+
+    function parseAdjustmentSchedule(data) {
+      const value = data?.nextAdjustmentAt;
+      // 使用小熊提供的新价格生效日零点，强制北京时间，避免随设备时区偏移。
+      if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}T00:00:00\+08:00$/.test(value)) {
+        throw new Error("调价时间格式无效");
+      }
+      const timestamp = Date.parse(value);
+      if (!Number.isFinite(timestamp)
+        || new Date(timestamp + 8 * 60 * 60 * 1000).toISOString().slice(0, 10) !== value.slice(0, 10)) {
+        throw new Error("调价日期无效");
+      }
+      const updatedTime = Date.parse(data.updatedAt);
+      const stale = data.status === "stale" || !Number.isFinite(updatedTime)
+        || Date.now() - updatedTime > 48 * 60 * 60 * 1000;
+      return { timestamp, value, stale };
+    }
+
+    function renderAdjustmentSchedule(data) {
+      els.priceAdjustment.hidden = true;
+      els.adjustmentDate.textContent = "";
+      els.adjustmentDate.dateTime = "";
+      els.adjustmentStatus.textContent = "";
+      try {
+        const schedule = parseAdjustmentSchedule(data);
+        els.priceAdjustment.hidden = false;
+        if (Date.now() >= schedule.timestamp) {
+          els.adjustmentHeading.textContent = "下次调价：待更新";
+          return;
+        }
+        const windowDate = new Intl.DateTimeFormat("zh-CN", {
+          timeZone: "Asia/Shanghai",
+          year: "numeric",
+          month: "long",
+          day: "numeric"
+        }).format(new Date(schedule.timestamp));
+        els.adjustmentHeading.textContent = "下次调价：";
+        els.adjustmentDate.dateTime = schedule.value;
+        els.adjustmentDate.textContent = `${windowDate} 0时`;
+        els.adjustmentStatus.textContent = schedule.stale ? "（待核实）" : "（预计）";
+      } catch {
+        // 兼容尚未带调价日期的旧数据或备用来源，不影响油价与计算。
+      }
+    }
 
     function getValidTankCapacity() {
       const capacity = numberValue(els.tankCapacity);
@@ -1014,6 +1051,7 @@
           els.priceMeta.textContent = `${data.city || "深圳"} · ${data.fuel || "95号汽油"} · 更新于 ${formatDate(data.updatedAt)}`;
           renderFreshness(data);
           renderSourceInfo(data);
+          renderAdjustmentSchedule(data);
         } else {
           throw new Error("fuel-price.json 未提供有效价格");
         }
@@ -1021,6 +1059,7 @@
         els.todayPrice.textContent = price(numberValue(els.basePrice));
         els.priceMeta.textContent = "未能读取自动油价，当前使用手动输入值";
         els.sourceLink.textContent = error.message;
+        renderAdjustmentSchedule(null);
       }
     }
 
@@ -1044,20 +1083,6 @@
         const observedLine = document.createElement("span");
         observedLine.textContent = `车友实测优惠价：${price(observedPrice)} 元/升`;
         els.sourceLink.appendChild(observedLine);
-      }
-
-      const observedDiscount = Number(data.observedDiscountPerLiter);
-      if (Number.isFinite(observedDiscount) && observedDiscount > 0) {
-        const applyButton = document.createElement("button");
-        applyButton.type = "button";
-        applyButton.className = "apply-observed";
-        applyButton.textContent = `应用实测优惠 ${price(observedDiscount)} 元/升`;
-        applyButton.addEventListener("click", () => {
-          els.discount.value = price(observedDiscount);
-          localStorage.setItem("fuel-discount", els.discount.value);
-          calculate();
-        });
-        els.sourceLink.appendChild(applyButton);
       }
 
       const safeSourceUrl = typeof data.sourceUrl === "string" && /^https?:\/\//i.test(data.sourceUrl)

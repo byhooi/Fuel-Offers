@@ -1,4 +1,5 @@
 import { readFile, writeFile } from "node:fs/promises";
+import { pathToFileURL } from "node:url";
 
 const OUTPUT_FILE = new URL("../fuel-price.json", import.meta.url);
 const PRICE_MIN = 5;
@@ -61,7 +62,8 @@ async function main() {
           status: "ok",
           note: result.note,
           observedDiscountPrice: result.observedDiscountPrice ?? null,
-          observedDiscountPerLiter: result.observedDiscountPerLiter ?? null
+          observedDiscountPerLiter: result.observedDiscountPerLiter ?? null,
+          nextAdjustmentAt: result.nextAdjustmentAt ?? null
         });
         console.log(`已更新深圳 95 号汽油价格：${result.price.toFixed(2)} 元/升，来源：${source.name}`);
         return;
@@ -139,16 +141,34 @@ function decodeBuffer(buffer, charset) {
   return new TextDecoder("utf-8").decode(buffer);
 }
 
-function parsePrice(html) {
+export function parsePrice(html) {
   const text = normalize(stripTags(html));
   const fromXiaoxiong = parseXiaoxiongPrice(text);
-  if (fromXiaoxiong) return fromXiaoxiong;
+  if (fromXiaoxiong) {
+    return { ...fromXiaoxiong, nextAdjustmentAt: parseXiaoxiongAdjustmentDate(html) };
+  }
 
   const rows = extractRows(html);
   const fromRows = parseTableRows(rows);
   if (fromRows) return fromRows;
 
   return parseFlatText(text);
+}
+
+export function parseXiaoxiongAdjustmentDate(html) {
+  const text = normalize(stripTags(html));
+  const visibleDate = text.match(/下次调价[：:]\s*(\d{1,2})-(\d{1,2})(?!\d)/);
+  // 小熊看板只显示月日，分享文案提供完整年份；只提取文本，不执行来源脚本。
+  const fullDate = html.match(/预计下次调价日期[：:]\s*(\d{4}-\d{2}-\d{2})(?![\d-])/);
+  if (!visibleDate || !fullDate) return null;
+
+  const [year, month, day] = fullDate[1].split("-").map(Number);
+  if (month !== Number(visibleDate[1]) || day !== Number(visibleDate[2])) return null;
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (date.toISOString().slice(0, 10) !== fullDate[1]) return null;
+
+  // 小熊显示的是新价格生效日，直接取该日北京时间零点，不再额外加一天。
+  return `${fullDate[1]}T00:00:00+08:00`;
 }
 
 function parseXiaoxiongPrice(text) {
@@ -318,7 +338,9 @@ function windowAround(text, pattern) {
   return text.slice(start, end);
 }
 
-main().catch((error) => {
-  console.error(error.message);
-  process.exitCode = 1;
-});
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main().catch((error) => {
+    console.error(error.message);
+    process.exitCode = 1;
+  });
+}
